@@ -4,8 +4,43 @@
   <link rel="icon" href="/favicon.ico"/>
   <title>Go service test harness</title>
   <script type="text/javascript" src="/script.js"></script>
+  <style>
+    #response {
+      font-family: monospace;
+      margin-top: 2em;
+      padding: 1em;
+      max-width: 80em;
+      border: 1px solid black;
+      height: 26lh;
+      overflow: scroll;
+      background-color: #333;
+      color: #0A0;
+    }
+    textarea {
+      width: 40em;
+      height: 6lh;
+    }
+  </style>
 </head>
 <body>
   <h1>Hello, World!</h1>
+
+  <h2>Form:</h2>
+  <form>
+    <label>Grid id:
+      <input id="form-grid-id" name="grid-id"></input>
+    </label>
+    <br>
+    <label>Grid Value:<br>
+      <textarea id="form-grid-value" name="grid-value" width="80" height="8"></textarea>
+    </label>
+    <br>
+    <button>Load</button>
+    <button>Save</button>
+  </form>
+
+  <div id="response">
+    HTTP responses go here...
+  </div>
 </body>
 </html>

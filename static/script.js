@@ -23,8 +23,34 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
   }
 
+  const save_handler = async function() {
+    try {
+      const post_data = {
+        'id': grid_id.value,
+        'contents': grid_value.value
+      }
+      const response = await fetch('/api/save', {
+        method: 'POST', // Specify the method
+        headers: {
+          'Content-Type': 'application/json' // Inform the server we are sending JSON
+        },
+        body: JSON.stringify(post_data) // Convert JS object to a JSON string
+      });
+
+      const data = await response.json();
+
+      const json_string = JSON.stringify(data, null, 2)
+
+      console.debug(`Response: ${json_string}`);
+      response_output.innerHTML = json_string;
+    } catch(e) {
+      console.error(e)
+    }
+  }
+
   save_button.addEventListener('click', function() {
     console.debug('Save button was clicked!');
+    save_handler()
   });
 
   load_button.addEventListener('click', function() {

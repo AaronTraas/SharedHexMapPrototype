@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<style>
+button.hex {
+  width: 43.3px; /* height*sin 60 */
+  height: 50px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+div.map {
+  display: flex;
+  flex-direction: row;
+}
+
+div.map div {
+  display: flex;
+  flex-direction: column;
+}
+
+div.map_column:nth-child(even) button.hex:first-child {
+  height: 25px;
+}
+
+div.map_column:nth-child(odd) button.hex:last-child {
+  height: 25px;
+}
+
+#hex_dialog>div {
+  display: flex;
+  flex-direction: column;
+}
+
+#hex_dialog>div>div {
+  display: flex;
+  flex-direction: row;
+}
+
+
+</style>
+
+<body>
+
+<h1>The Map</h1>
+
+<dialog id="hex_dialog" title="Basic dialog">
+  <div>
+  <div>
+  <select id="hex_dialog_select" ></select>
+  <label id="hex_dialog_label"></label>
+  <button onclick="hex_dialog.close()">OK</button>
+  </div>
+  <label>Notes:</label>
+  <textarea id="hex_dialog_textarea" rows="25" cols="80" placeholder="Enter notes about this hex here."></textarea>
+  </div>
+</dialog>
+
+
+</body>
+
+<script>
+
+const hex_attributes_by_type = {
+  'unknown'  : { 'text': 'Unknown'     , 'bg': 'darkgray',      'fg':'black'},
+  'artic'    : { 'text': 'Artic'       , 'bg': 'snow',          'fg':'black'},
+  'badlands' : { 'text': 'Badlands'    , 'bg': 'orange',        'fg':'white'},
+  'costal'   : { 'text': 'Costal'      , 'bg': 'sandybrown',    'fg':'black'},
+  'desert'   : { 'text': 'Desert'      , 'bg': 'yellow',        'fg':'black'},
+  'farmland' : { 'text': 'Farmland'    , 'bg': 'wheat',         'fg':'black'},
+  'forest'   : { 'text': 'Forest'      , 'bg': 'forestgreen',   'fg':'white'},
+  'grassland': { 'text': 'Grassland'   , 'bg': 'lime',          'fg':'black'},
+  'hills'    : { 'text': 'Hills'       , 'bg': 'peru',          'fg':'white'},
+  'mountains': { 'text': 'Mountains'   , 'bg': 'brown',         'fg':'white'},
+  'swamp'    : { 'text': 'Swamp'       , 'bg': 'gray',          'fg':'black'},
+  'urban'    : { 'text': 'Urban'       , 'bg': 'silver',        'fg':'black'},
+  'deepwater': { 'text': 'Deep Water'  , 'bg': 'navy',          'fg':'white'},
+  'shallows' : { 'text': 'Shallows'    , 'bg': 'aqua',          'fg':'black'},
+  'river9'   : { 'text': 'River N:S'   , 'bg': 'aqua',          'fg':'black'},
+  'river18'  : { 'text': 'River SW:NE' , 'bg': 'aqua',          'fg':'black'},
+  'river36'  : { 'text': 'River NW:SE' , 'bg': 'aqua',          'fg':'black'},
+};
+
+const hex_types = Object.keys(hex_attributes_by_type);
+
+const MAP_X = 34;
+const MAP_Y = 51;
+
+function displayCordinates(x, y){
+  return `${x}, ${(MAP_Y/2 | 0)-y}`;
+}
+
+function handleClick(x, y) {
+  selected_hex_info = buttons[x][y];
+  //alert(`Hello from ${selected_hex_info.type} at ${selected_hex_info.btn.id}`);
+  hex_dialog_label.textContent = `Hello from ${selected_hex_info.type} at ${selected_hex_info.btn.id}`;
+  hex_dialog_textarea.value = selected_hex_info.notes;
+  hex_dialog_select.value = selected_hex_info.type;
+
+  hex_dialog.showModal();
+
+}
+
+function handleHexDialogClose() {
+  selected_hex_info.btn.classList.remove(selected_hex_info.type);
+  selected_hex_info.type = hex_dialog_select.value;
+  selected_hex_info.notes = hex_dialog_textarea.value;
+  buttonSetHexType(selected_hex_info.btn, selected_hex_info.type);
+}
+
+function getRandomHexType() {
+  return hex_types[(Math.random() * hex_types.length) | 0];
+}
+
+function buttonSetHexType(btn, hex_type) {
+  btn.classList.add(hex_type);
+  let attr = hex_attributes_by_type[hex_type];
+  btn.style.backgroundColor = attr.bg;
+  btn.style.color = attr.fg;
+}
+
+function createButton(x, y) {
+  var button = document.createElement("BUTTON");
+  button.textContent = displayCordinates(x, y);
+  button.id = `${x}_${y}`;
+  button.classList.add('hex');
+  //let hex_type = getRandomHexType();
+  let hex_type = 'unknown';
+  buttonSetHexType(button, hex_type);
+  button.addEventListener("click", () => handleClick(x, y) );
+  return { btn: button, type: hex_type, notes: ""};
+}
+
+function createButtons() {
+  buttons = [];
+  var map = document.createElement("DIV");
+  map.classList.add('map');
+  for (let i = 0; i < MAP_X; ++i) {
+    var d = document.createElement("DIV");
+    d.classList.add('map_column');
+    buttons[i] = [];
+    for (let j = 0; j < MAP_Y; ++j) {
+      b = createButton(i, j);
+      buttons[i][j] = b;
+      d.appendChild(b.btn);
+    }
+    map.appendChild(d);
+  }
+  document.body.appendChild(map);
+  return buttons;
+}
+
+function populateHexDialogSelect() {
+  hex_types.forEach(hex_type => {
+    const option = document.createElement("OPTION");
+    const attr = hex_attributes_by_type[hex_type];
+    option.style.backgroundColor = attr.bg;
+    option.style.color = attr.fg;
+    option.textContent = attr.text;
+    option.value = hex_type;
+    hex_dialog_select.appendChild(option);
+  });
+
+  hex_dialog.addEventListener("close", handleHexDialogClose );
+}
+
+var selected_hex_info = null;
+var hex_dialog = document.getElementById('hex_dialog');
+var hex_dialog_select = document.getElementById('hex_dialog_select');
+var hex_dialog_label = document.getElementById('hex_dialog_label');
+var hex_dialog_textarea = document.getElementById('hex_dialog_textarea');
+populateHexDialogSelect();
+var buttons = createButtons();
+
+</script>
+</html>

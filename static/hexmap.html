@@ -60,93 +60,120 @@ div.map_column:nth-child(odd) button.hex:last-child {
 
 <script>
 
+class HexTypeAttributes {
+  constructor( text, bg, fg ) {
+    this.text = text;
+    this.bg = bg;
+    this.fg = fg;
+  }
+}
+
 const hex_attributes_by_type = {
-  'unknown'  : { 'text': 'Unknown'     , 'bg': 'darkgray',      'fg':'black'},
-  'artic'    : { 'text': 'Artic'       , 'bg': 'snow',          'fg':'black'},
-  'badlands' : { 'text': 'Badlands'    , 'bg': 'orange',        'fg':'white'},
-  'costal'   : { 'text': 'Costal'      , 'bg': 'sandybrown',    'fg':'black'},
-  'desert'   : { 'text': 'Desert'      , 'bg': 'yellow',        'fg':'black'},
-  'farmland' : { 'text': 'Farmland'    , 'bg': 'wheat',         'fg':'black'},
-  'forest'   : { 'text': 'Forest'      , 'bg': 'forestgreen',   'fg':'white'},
-  'grassland': { 'text': 'Grassland'   , 'bg': 'lime',          'fg':'black'},
-  'hills'    : { 'text': 'Hills'       , 'bg': 'peru',          'fg':'white'},
-  'mountains': { 'text': 'Mountains'   , 'bg': 'brown',         'fg':'white'},
-  'swamp'    : { 'text': 'Swamp'       , 'bg': 'gray',          'fg':'black'},
-  'urban'    : { 'text': 'Urban'       , 'bg': 'silver',        'fg':'black'},
-  'deepwater': { 'text': 'Deep Water'  , 'bg': 'navy',          'fg':'white'},
-  'shallows' : { 'text': 'Shallows'    , 'bg': 'aqua',          'fg':'black'},
-  'river9'   : { 'text': 'River N:S'   , 'bg': 'aqua',          'fg':'black'},
-  'river18'  : { 'text': 'River SW:NE' , 'bg': 'aqua',          'fg':'black'},
-  'river36'  : { 'text': 'River NW:SE' , 'bg': 'aqua',          'fg':'black'},
+  'unknown'  : new HexTypeAttributes('Unknown'     , 'darkgray',      'black'),
+  'artic'    : new HexTypeAttributes('Artic'       , 'snow',          'black'),
+  'badlands' : new HexTypeAttributes('Badlands'    , 'orange',        'white'),
+  'costal'   : new HexTypeAttributes('Costal'      , 'sandybrown',    'black'),
+  'desert'   : new HexTypeAttributes('Desert'      , 'yellow',        'black'),
+  'farmland' : new HexTypeAttributes('Farmland'    , 'wheat',         'black'),
+  'forest'   : new HexTypeAttributes('Forest'      , 'forestgreen',   'white'),
+  'grassland': new HexTypeAttributes('Grassland'   , 'lime',          'black'),
+  'hills'    : new HexTypeAttributes('Hills'       , 'peru',          'white'),
+  'mountains': new HexTypeAttributes('Mountains'   , 'brown',         'white'),
+  'swamp'    : new HexTypeAttributes('Swamp'       , 'gray',          'black'),
+  'urban'    : new HexTypeAttributes('Urban'       , 'silver',        'black'),
+  'deepwater': new HexTypeAttributes('Deep Water'  , 'navy',          'white'),
+  'shallows' : new HexTypeAttributes('Shallows'    , 'aqua',          'black'),
+  'river9'   : new HexTypeAttributes('River N:S'   , 'aqua',          'black'),
+  'river18'  : new HexTypeAttributes('River SW:NE' , 'aqua',          'black'),
+  'river36'  : new HexTypeAttributes('River NW:SE' , 'aqua',          'black'),
 };
 
 const hex_types = Object.keys(hex_attributes_by_type);
 
-const MAP_X = 34;
+const MAP_X = 40;
 const MAP_Y = 51;
+
 
 function displayCordinates(x, y){
   return `${x}, ${(MAP_Y/2 | 0)-y}`;
 }
 
-function handleClick(x, y) {
-  selected_hex_info = buttons[x][y];
-  //alert(`Hello from ${selected_hex_info.type} at ${selected_hex_info.btn.id}`);
-  hex_dialog_label.textContent = `Hello from ${selected_hex_info.type} at ${selected_hex_info.btn.id}`;
-  hex_dialog_textarea.value = selected_hex_info.notes;
-  hex_dialog_select.value = selected_hex_info.type;
-
-  hex_dialog.showModal();
-
-}
-
 function handleHexDialogClose() {
-  selected_hex_info.btn.classList.remove(selected_hex_info.type);
-  selected_hex_info.type = hex_dialog_select.value;
-  selected_hex_info.notes = hex_dialog_textarea.value;
-  buttonSetHexType(selected_hex_info.btn, selected_hex_info.type);
+  if (hex_dialog_close_callback) {
+    hex_dialog_close_callback();
+    hex_dialog_close_callback = null;
+  }
 }
 
 function getRandomHexType() {
   return hex_types[(Math.random() * hex_types.length) | 0];
 }
 
-function buttonSetHexType(btn, hex_type) {
-  btn.classList.add(hex_type);
-  let attr = hex_attributes_by_type[hex_type];
-  btn.style.backgroundColor = attr.bg;
-  btn.style.color = attr.fg;
-}
-
-function createButton(x, y) {
-  var button = document.createElement("BUTTON");
-  button.textContent = displayCordinates(x, y);
-  button.id = `${x}_${y}`;
-  button.classList.add('hex');
-  //let hex_type = getRandomHexType();
-  let hex_type = 'unknown';
-  buttonSetHexType(button, hex_type);
-  button.addEventListener("click", () => handleClick(x, y) );
-  return { btn: button, type: hex_type, notes: ""};
-}
-
-function createButtons() {
-  buttons = [];
-  var map = document.createElement("DIV");
-  map.classList.add('map');
-  for (let i = 0; i < MAP_X; ++i) {
-    var d = document.createElement("DIV");
-    d.classList.add('map_column');
-    buttons[i] = [];
-    for (let j = 0; j < MAP_Y; ++j) {
-      b = createButton(i, j);
-      buttons[i][j] = b;
-      d.appendChild(b.btn);
-    }
-    map.appendChild(d);
+class HexData {
+  constructor( x, y ) {
+    this.x = x;
+    this.y = y;
+    this.notes = '';
+    this.btn = document.createElement("BUTTON");
+    this.btn.textContent = displayCordinates(x, y);
+    this.btn.id = `${x}_${y}`;
+    this.btn.classList.add('hex');
+    //this.setHexType(getRandomHexType());
+    this.setHexType('unknown');
+    this.btn.addEventListener("click", () => this.handleClick() );
   }
-  document.body.appendChild(map);
-  return buttons;
+
+  setHexType(hex_type) {
+    if (this.type) {
+      this.btn.classList.remove(this.type);
+    }
+    this.type = hex_type;
+    this.btn.classList.add(hex_type);
+    let attr = hex_attributes_by_type[hex_type];
+    this.btn.style.backgroundColor = attr.bg;
+    this.btn.style.color = attr.fg;
+  }
+
+  handleClick() {
+    hex_dialog_label.textContent = `Hello from ${this.type} at ${this.btn.id}`;
+    hex_dialog_textarea.value = this.notes;
+    hex_dialog_select.value = this.type;
+
+    hex_dialog_close_callback = () => this.handleHexDialogClose();
+
+    hex_dialog.showModal();
+  }
+
+  handleHexDialogClose() {
+    this.notes = hex_dialog_textarea.value;
+    this.setHexType(hex_dialog_select.value);
+  }
+}
+
+class HexMap {
+  constructor( columns, rows ) {
+    this.columns = columns;
+    this.rows = rows;
+    this.hexes = [];
+    let map = document.createElement("DIV");
+    map.classList.add('map');
+    for (let i = 0; i < columns; ++i) {
+      let d = document.createElement("DIV");
+      d.classList.add('map_column');
+      this.hexes[i] = [];
+      for (let j = 0; j < rows; ++j) {
+        let b = new HexData(i, j);
+        this.hexes[i][j] = b;
+        d.appendChild(b.btn);
+      }
+      map.appendChild(d);
+    }
+    document.body.appendChild(map);
+  }
+
+  getHexData( x, y ) {
+    return this.hexes[x][y];
+  }
 }
 
 function populateHexDialogSelect() {
@@ -163,13 +190,13 @@ function populateHexDialogSelect() {
   hex_dialog.addEventListener("close", handleHexDialogClose );
 }
 
-var selected_hex_info = null;
+var hex_dialog_close_callback = null;
 var hex_dialog = document.getElementById('hex_dialog');
 var hex_dialog_select = document.getElementById('hex_dialog_select');
 var hex_dialog_label = document.getElementById('hex_dialog_label');
 var hex_dialog_textarea = document.getElementById('hex_dialog_textarea');
 populateHexDialogSelect();
-var buttons = createButtons();
+var hex_map = new HexMap(MAP_X, MAP_Y);
 
 </script>
 </html>

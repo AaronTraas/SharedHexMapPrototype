@@ -147,6 +147,35 @@ class HexData {
   handleHexDialogClose() {
     this.notes = hex_dialog_textarea.value;
     this.setHexType(hex_dialog_select.value);
+    this.save();
+  }
+
+  async save() {
+    try {
+      const post_contents = {
+        'type' : this.type,
+        'notes': this.notes
+      }
+      const post_data = {
+        'id': this.btn.id,
+        'contents': JSON.stringify(post_contents)
+      }
+      const response = await fetch('/api/save', {
+        method: 'POST', // Specify the method
+        headers: {
+          'Content-Type': 'application/json' // Inform the server we are sending JSON
+        },
+        body: JSON.stringify(post_data) // Convert JS object to a JSON string
+      });
+
+      const data = await response.json();
+
+      const json_string = JSON.stringify(data, null, 2)
+
+      console.debug(`Response: ${json_string}`);
+    } catch(e) {
+      console.error(e)
+    }
   }
 }
 

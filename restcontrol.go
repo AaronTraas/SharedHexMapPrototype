@@ -12,10 +12,21 @@ type Response struct {
 	GridCell GridCell `json:"grid-cell"`
 }
 
+type ErrorResponse struct {
+	Message  string   `json:"message"`
+	Status   int      `json:"status"`
+}
+
 type MapListResponse struct {
 	Message  string   `json:"message"`
 	Status   int      `json:"status"`
-	Maps     []string   `json:"maps"`
+	Maps     []string `json:"maps"`
+}
+
+type MapResponse struct {
+	Message  string   `json:"message"`
+	Status   int      `json:"status"`
+	Map      HexMap   `json:"map"`
 }
 
 var cell GridCell
@@ -73,7 +84,7 @@ func handleSaveMapCell(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func StartRestController(hexMaps *map[string]HexMap, transformTasks chan MapTransformTask) {
+func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTransformTask) {
 	// Define a route and handler for serving static files at the root
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", http.StripPrefix("/", fs))
@@ -87,8 +98,8 @@ func StartRestController(hexMaps *map[string]HexMap, transformTasks chan MapTran
 	http.HandleFunc("/maps", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		keys := make([]string, 0, len(*hexMaps))
-		for k := range *hexMaps {
+		keys := make([]string, 0, len(hexMaps))
+		for k := range hexMaps {
 			keys = append(keys, k)
 		}
 
@@ -96,6 +107,32 @@ func StartRestController(hexMaps *map[string]HexMap, transformTasks chan MapTran
 			Message:  "Success",
 			Status:   200,
 			Maps:     keys,
+		}
+		json.NewEncoder(w).Encode(res)
+	})
+
+	// Define a route and handler for load endpoint
+	http.HandleFunc("/maps/{name}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		mapName := r.PathValue("name") // Retrieve the value of the 'id' wildcard
+
+		hexMap := hexMaps[mapName]
+
+		hexMap, exists := hexMaps[mapName]
+		if !exists {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Map '%s' does not exist.", mapName),
+				Status: 404,
+			}
+
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
+		res := MapResponse {
+			Message:  "Success",
+			Status:   200,
+			Map:      hexMap,
 		}
 		json.NewEncoder(w).Encode(res)
 	})

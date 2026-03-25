@@ -83,5 +83,5 @@ func main() {
 	transformTaskChannel := make(chan MapTransformTask)
 
 	go mapTransformWorker()
-	StartRestController(&hexMaps, transformTaskChannel)
+	StartRestController(hexMaps, transformTaskChannel)
 }

@@ -89,16 +89,20 @@ function getRandomHexType() {
 }
 
 class HexData {
-  constructor( x, y ) {
+  constructor( x, y, hexType = 'unknown', content = null ) {
     this.x = x;
     this.y = y;
     this.notes = '';
     this.btn = document.createElement("BUTTON");
-    this.btn.textContent = displayCordinates(x, y);
+    if( content ) {
+      this.btn.textContent = content;
+    } else {
+      this.btn.textContent = displayCordinates(x, y);
+    }
     this.btn.id = `${x}_${y}`;
     this.btn.classList.add('hex');
     //this.setHexType(getRandomHexType());
-    this.setHexType('unknown');
+    this.setHexType(hexType);
     this.btn.addEventListener("click", () => this.handleClick() );
   }
 
@@ -143,7 +147,7 @@ class HexData {
 }
 
 class HexMap {
-  constructor( columns, rows ) {
+  constructor( columns, rows, mapCells = null ) {
     this.columns = columns;
     this.rows = rows;
     this.hexes = [];
@@ -154,7 +158,11 @@ class HexMap {
       d.classList.add('map_column');
       this.hexes[i] = [];
       for (let j = 0; j < rows; ++j) {
-        let b = new HexData(i, j);
+        let cell = mapCells ? mapCells[i][j] : null;
+        let type = cell ? cell["type"] : "unknown";
+        let contents = cell ? cell["contents"] : null;
+        console.log(type, contents)
+        let b = new HexData(i, j, type, contents);
         this.hexes[i][j] = b;
         d.appendChild(b.btn);
       }
@@ -192,12 +200,24 @@ populateHexDialogSelect();
 
 const params = new URLSearchParams(window.location.hash.slice(1));
 if (params.has('map')) {
-  //load_map(params.get('map'))
-  hex_dialog_filename.value = params.get('map');
+  const mapFilename = params.get('map')
+  hex_dialog_filename.value = mapFilename;
+
+  loadMap(mapFilename).then(map => {
+    const mapCells = map["cells"]
+    const row_count = mapCells.length
+    const col_count = mapCells[0].length
+
+    //console.log(JSON.stringify(mapCells, null, 2))
+
+    var hex_map = new HexMap(row_count, col_count, mapCells);
+  });
+
+
 } else {
+  var hex_map = new HexMap(MAP_X, MAP_Y);
 }
 
-var hex_map = new HexMap(MAP_X, MAP_Y);
 
 </script>
 </html>

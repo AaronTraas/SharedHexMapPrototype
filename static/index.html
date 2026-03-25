@@ -10,10 +10,6 @@
 
   <ul id="map-list"></ul>
 
-  <hr>
-
-  <a href="hexmap.html">HEXMAP Front End</a>
-
   <script>
     document.addEventListener('DOMContentLoaded', async (event) => {
       const map_list = document.getElementById('map-list')
@@ -24,11 +20,15 @@
       maps.forEach(mapEntry => {
         const li = document.createElement("li");
 
-        const a = document.createElement("a");
-        a.href = `/debug.html#?map=${mapEntry.filename}`;
-        a.textContent = `${mapEntry.title} (v${mapEntry.version})`;
+        const aMap = document.createElement("a");
+        aMap.href = `/hexmap.html#?map=${mapEntry.filename}`;
+        aMap.textContent = `${mapEntry.title} (v${mapEntry.version})`;
 
-        li.appendChild(a);
+        const aDebug = document.createElement("a");
+        aDebug.href = `/debug.html#?map=${mapEntry.filename}`;
+        aDebug.textContent = `DEBUG`;
+
+        li.append(aMap, " — ", aDebug);
 
         map_list.appendChild(li);
       })

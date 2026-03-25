@@ -1,58 +1,32 @@
 <!DOCTYPE html>
 <html>
-<style>
-button.hex {
-  width: 43.3px; /* height*sin 60 */
-  height: 50px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-div.map {
-  display: flex;
-  flex-direction: row;
-}
-
-div.map div {
-  display: flex;
-  flex-direction: column;
-}
-
-div.map_column:nth-child(even) button.hex:first-child {
-  height: 25px;
-}
-
-div.map_column:nth-child(odd) button.hex:last-child {
-  height: 25px;
-}
-
-#hex_dialog>div {
-  display: flex;
-  flex-direction: column;
-}
-
-#hex_dialog>div>div {
-  display: flex;
-  flex-direction: row;
-}
-
-
-</style>
-
+<head>
+  <link rel="stylesheet" href="hexmap.css" />
+</head>
 <body>
 
 <h1>The Map</h1>
 
 <dialog id="hex_dialog" title="Basic dialog">
-  <div>
-  <div>
-  <select id="hex_dialog_select" ></select>
-  <label id="hex_dialog_label"></label>
-  <button onclick="hex_dialog.close()">OK</button>
-  </div>
-  <label>Notes:</label>
-  <textarea id="hex_dialog_textarea" rows="25" cols="80" placeholder="Enter notes about this hex here."></textarea>
-  </div>
+  <header>
+    <button onclick="hex_dialog.close()">X</button>
+    <h2>Edit Tile</h2>
+  </header>
+
+  <form>
+    <label for="hex_dialog_id">Hex ID:</label>
+    <input id="hex_dialog_id"></input>
+
+    <label for="hex_dialog_select">Terrain: </label>
+    <select id="hex_dialog_select"></select>
+
+    <label>Notes:</label>
+    <textarea id="hex_dialog_textarea" rows="25" cols="80" placeholder="Enter notes about this hex here."></textarea>
+  </form>
+  <footer>
+    <button onclick="hex_dialog.close()">Cancel</button>
+    <button class="primary" onclick="hex_dialog.close()">Save</button>
+  </footer>
 </dialog>
 
 
@@ -135,7 +109,7 @@ class HexData {
   }
 
   handleClick() {
-    hex_dialog_label.textContent = `Hello from ${this.type} at ${this.btn.id}`;
+    hex_dialog_id.value = this.btn.id;
     hex_dialog_textarea.value = this.notes;
     hex_dialog_select.value = this.type;
 
@@ -222,7 +196,7 @@ function populateHexDialogSelect() {
 var hex_dialog_close_callback = null;
 var hex_dialog = document.getElementById('hex_dialog');
 var hex_dialog_select = document.getElementById('hex_dialog_select');
-var hex_dialog_label = document.getElementById('hex_dialog_label');
+var hex_dialog_id = document.getElementById('hex_dialog_id');
 var hex_dialog_textarea = document.getElementById('hex_dialog_textarea');
 populateHexDialogSelect();
 var hex_map = new HexMap(MAP_X, MAP_Y);

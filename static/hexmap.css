@@ -1,0 +1,120 @@
+button.hex {
+  width: 43.3px; /* height*sin 60 */
+  height: 50px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+div.map {
+  display: flex;
+  flex-direction: row;
+}
+
+div.map div {
+  display: flex;
+  flex-direction: column;
+}
+
+div.map_column:nth-child(even) button.hex:first-child {
+  height: 25px;
+}
+
+div.map_column:nth-child(odd) button.hex:last-child {
+  height: 25px;
+}
+
+#hex_dialog>div {
+  display: flex;
+  flex-direction: column;
+}
+
+#hex_dialog>div>div {
+  display: flex;
+  flex-direction: row;
+}
+
+#hex_dialog > div > * {
+  margin-bottom: 0.5lh;
+}
+
+dialog, dialog * {
+}
+
+dialog {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  padding: 0;
+  margin: auto;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+}
+
+dialog > header {
+  padding: 15px 20px;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 20px;
+  background: #ddd;
+  margin: 0;
+}
+
+dialog > header h2 {
+  font-size: 1.25rem;
+  line-height: 2rem;
+  margin: 0;
+  padding: 0;
+}
+
+dialog form {
+  display: grid;
+  grid-template-columns: [labels] auto [controls] 1fr;
+  grid-auto-flow: row;
+  grid-gap: .8em;
+  padding: 1.2em;
+}
+dialog form > label  {
+  grid-column: labels;
+  grid-row: auto;
+}
+dialog form > input,
+dialog form > textarea {
+  grid-column: controls;
+  grid-row: auto;
+  padding: 0.3em;
+}
+
+dialog > header button {
+  float: right;
+  padding: 5px 10px;
+  font-weight: bold;
+}
+
+dialog > p, dialog > div {
+  padding: 8px 20px;
+}
+
+dialog button {
+  padding: 10px 20px;
+  border: none;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: 0.5s;
+  background-color: #999;
+}
+
+dialog button.primary {
+  background-color: #007bff;
+}
+
+dialog > footer {
+  text-align: right;
+  padding: 15px 20px;
+  border-top: 2px solid #eee;
+  margin-top: 20px;
+}

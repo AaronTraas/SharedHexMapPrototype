@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
       console.debug(`Response: ${json_string}`);
       response_output.innerHTML = json_string;
+
+      load_map(name)
     } catch(e) {
       console.error(e)
     }

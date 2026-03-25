@@ -118,7 +118,15 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 			GridCell: newCell,
 		}
 
-		hexMaps[mapName].HexGrid[row][col] = newCell
+		newHexGrid := hexMaps[mapName].HexGrid
+		newHexGrid[row][col] = newCell
+		newMap := HexMap{
+			Title: hexMaps[mapName].Title,
+			Version: hexMaps[mapName].Version + 1,
+			HexGrid: newHexGrid,
+		}
+
+		hexMaps[mapName] = newMap
 
 		json.NewEncoder(w).Encode(res)
 	})

@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', (event) => {
   console.debug('Script loaded')
-  const save_button = document.getElementById('save-button')
   const map_name = document.getElementById('form-map-name')
   const map_title = document.getElementById('form-map-title')
   const map_version = document.getElementById('form-map-version')
@@ -9,6 +8,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
   const terrain_type = document.getElementById('form-terrain-type')
   const cell_contents = document.getElementById('form-cell-contents')
   const response_output = document.getElementById('response')
+
+  const save_button = document.getElementById('save-button')
 
   var mapCells = [[]]
 
@@ -33,10 +34,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
   }
 
-  const map_select_handler = async function(event) {
+  const load_map = async function(mapName) {
     try {
-      const mapName = event.target.value;
-
       // clear rows and columns in dropdown
       grid_row.innerHTML = ''
       grid_column.innerHTML = ''
@@ -73,6 +72,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
   }
 
+  const map_select_handler = async function(event) {
+    const mapName = event.target.value;
+    load_map(mapName)
+  }
+
   const cell_select_handler = async function(event) {
     const row = grid_row.value
     const col = grid_column.value
@@ -87,10 +91,14 @@ document.addEventListener('DOMContentLoaded', (event) => {
   const save_handler = async function() {
     try {
       const post_data = {
-        'id': grid_id.value,
-        'contents': grid_value.value
+        "type": terrain_type.value,
+        "contents": cell_contents.value
       }
-      const response = await fetch('/api/save', {
+      const row = grid_row.value
+      const col = grid_column.value
+      const name = map_name.value
+
+      const response = await fetch(`/maps/${name}/update/${row}/${col}`, {
         method: 'POST', // Specify the method
         headers: {
           'Content-Type': 'application/json' // Inform the server we are sending JSON

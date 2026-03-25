@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+    "strconv"
 )
 
-type Response struct {
+type ResponseCellUpdated struct {
 	Message  string   `json:"message"`
 	Status   int      `json:"status"`
 	GridCell GridCell `json:"grid-cell"`
@@ -29,73 +31,14 @@ type MapResponse struct {
 	Map      HexMap   `json:"map"`
 }
 
-var cell GridCell
-
-func handleLoadMapCell(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
-	if r.Method != http.MethodGet {
-		fmt.Println("  - method not allowed")
-		http.Error(w, "405: Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	fmt.Println("  - Returning grid cell")
-	w.Header().Set("Content-Type", "application/json")
-
-	res := Response{
-		Message:  "Success",
-		Status:   200,
-		GridCell: cell,
-	}
-
-	json.NewEncoder(w).Encode(res)
-}
-
-func handleSaveMapCell(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
-	if r.Method != http.MethodPost {
-		fmt.Println("  - method not allowed")
-		http.Error(w, "405: Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var newCell GridCell
-	err := json.NewDecoder(r.Body).Decode(&newCell)
-	if err != nil {
-		// return HTTP 400 bad request
-		fmt.Println("  - Bad body")
-		http.Error(w, "400: Bad request", http.StatusBadRequest)
-		return
-	}
-
-	fmt.Printf("  - Updating grid cell {type: '%s', contents: '%s'\n", newCell.Type, newCell.Contents)
-
-	cell.Type = newCell.Type
-	cell.Contents = newCell.Contents
-
-	w.Header().Set("Content-Type", "application/json")
-
-	res := Response{
-		Message:  "Accepted",
-		Status:   202,
-		GridCell: cell,
-	}
-
-	json.NewEncoder(w).Encode(res)
-}
-
 func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTransformTask) {
 	// Define a route and handler for serving static files at the root
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	cell = GridCell{
-		Type:     "default",
-		Contents: "Hello World",
-	}
-
 	// Define a route and handler for load endpoint
 	http.HandleFunc("/maps", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 
 		keys := make([]string, 0, len(hexMaps))
@@ -113,8 +56,10 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 
 	// Define a route and handler for load endpoint
 	http.HandleFunc("/maps/{name}", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s\n", r.Method, r.URL.Path)
+
 		w.Header().Set("Content-Type", "application/json")
-		mapName := r.PathValue("name") // Retrieve the value of the 'id' wildcard
+		mapName := r.PathValue("name")
 
 		hexMap := hexMaps[mapName]
 
@@ -124,7 +69,6 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 				Message: fmt.Sprintf("Map '%s' does not exist.", mapName),
 				Status: 404,
 			}
-
 			json.NewEncoder(w).Encode(res)
 			return
 		}
@@ -137,13 +81,49 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		json.NewEncoder(w).Encode(res)
 	})
 
-	// Define a route and handler for load endpoint
-	http.HandleFunc("/api/load", handleLoadMapCell)
-
 	// Define a route and handler for save endpoint
-	http.HandleFunc("/api/save", handleSaveMapCell)
+	http.HandleFunc("/maps/{name}/update/{row}/{col}", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s\n", r.Method, r.URL.Path)
+
+		mapName := r.PathValue("name")
+		row, rowErr := strconv.Atoi(r.PathValue("row"))
+		col, colErr := strconv.Atoi(r.PathValue("col"))
+		if rowErr != nil || colErr != nil {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Map cell (%s, %s) does not exist.", r.PathValue("row"), r.PathValue("col")),
+				Status: 404,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
+		var newCell GridCell
+		err := json.NewDecoder(r.Body).Decode(&newCell)
+		if err != nil {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Bad request. Bad JSON body submitted.", mapName),
+				Status: 400,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
+		log.Printf("  - Updating grid cell (%d, %d)) {type: '%s', contents: '%s'}\n", row, col, newCell.Type, newCell.Contents)
+
+		w.Header().Set("Content-Type", "application/json")
+
+		res := ResponseCellUpdated{
+			Message:  "Accepted",
+			Status:   202,
+			GridCell: newCell,
+		}
+
+		hexMaps[mapName].HexGrid[row][col] = newCell
+
+		json.NewEncoder(w).Encode(res)
+	})
 
 	// Start the server on port 8080
-	fmt.Println("Server starting on http://localhost:8080...")
+	log.Println("Server starting on http://localhost:8080...")
 	http.ListenAndServe(":8080", nil)
 }

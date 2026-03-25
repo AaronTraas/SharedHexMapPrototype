@@ -2,7 +2,9 @@ document.addEventListener('DOMContentLoaded', (event) => {
   console.debug('Script loaded')
   const load_button = document.getElementById('load-button')
   const save_button = document.getElementById('save-button')
-  const grid_id = document.getElementById('form-grid-id')
+  const map_name = document.getElementById('form-map-name`')
+  const grid_row = document.getElementById('form-grid-row')
+  const grid_column = document.getElementById('form-grid-column')
   const grid_value = document.getElementById('form-grid-value')
   const response_output = document.getElementById('response')
 
@@ -16,7 +18,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
       console.debug(`Response: ${json_string}`);
       response_output.innerHTML = json_string;
 
-      grid_id.value = data['grid-cell']['id']
       grid_value.value = data['grid-cell']['contents']
     } catch(e) {
       console.error(e)

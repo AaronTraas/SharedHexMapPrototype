@@ -10,6 +10,18 @@ async function getMapList() {
     }
 }
 
+async function getMapVersion(mapName) {
+    try {
+        const response = await fetch(`/maps/${mapName}/metadata`);
+        const data = await response.json();
+
+        return data["map"]["version"]
+    } catch(e) {
+        console.error(e)
+        return null
+    }
+}
+
 async function loadMap(mapName) {
     try {
         const response = await fetch(`/maps/${mapName}`);

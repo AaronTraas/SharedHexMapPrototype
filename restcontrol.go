@@ -25,6 +25,12 @@ type MapListResponse struct {
 	Maps     []MapListEntry `json:"maps"`
 }
 
+type MapMetadataResponse struct {
+	Message  string         `json:"message"`
+	Status   int            `json:"status"`
+	Map      MapListEntry   `json:"map"`
+}
+
 type MapResponse struct {
 	Message  string   `json:"message"`
 	Status   int      `json:"status"`
@@ -42,7 +48,6 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", http.StripPrefix("/", fs))
 
-	// Define a route and handler for load endpoint
 	http.HandleFunc("/maps", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
@@ -66,7 +71,6 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		json.NewEncoder(w).Encode(res)
 	})
 
-	// Define a route and handler for load endpoint
 	http.HandleFunc("/maps/{name}", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 
@@ -93,7 +97,37 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		json.NewEncoder(w).Encode(res)
 	})
 
-	// Define a route and handler for save endpoint
+	http.HandleFunc("/maps/{name}/metadata", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s\n", r.Method, r.URL.Path)
+
+		w.Header().Set("Content-Type", "application/json")
+		mapName := r.PathValue("name")
+
+		hexMap := hexMaps[mapName]
+
+		hexMap, exists := hexMaps[mapName]
+		if !exists {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Map '%s' does not exist.", mapName),
+				Status: 404,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
+		mapMeta := MapListEntry{
+				Filename: mapName,
+				Title:    hexMap.Title,
+				Version:  hexMap.Version,
+		}
+		res := MapMetadataResponse {
+			Message:  "Success",
+			Status:   200,
+			Map:      mapMeta,
+		}
+		json.NewEncoder(w).Encode(res)
+	})
+
 	http.HandleFunc("/maps/{name}/update/{row}/{col}", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 

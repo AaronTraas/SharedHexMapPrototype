@@ -17,32 +17,43 @@
       color: #0A0;
       white-space: pre;
     }
+
+    #debug-form label {
+      display: inline-block;
+      width: 150px;
+      margin-bottom: 0.5lh;
+    }
   </style>
 </head>
 <body>
   <h1>Hello, World!</h1>
 
-  <h2>Form:</h2>
-  <form>
-    <label>Map name:
-      <input id="form-map-name" name="map-name"></input>
-    </label>
-    <label>Grid row:
-      <input id="form-grid-row" name="grid-row"></input>
-    </label>
-    <label>Grid column:
-      <input id="form-grid-id" name="grid-column"></input>
-    </label>
-    <br>
-    <label>Grid Value:
-      <input id="form-grid-value" name="grid-value"></input>
-    </label>
-    <br>
-  </form>
-  <button id="load-button">Load</button>
-  <button id="save-button">Save</button>
-
   <a href="hexmap.html">HEXMAP Front End</a>
+
+  <h2>Form:</h2>
+  <form id="debug-form">
+    <label for="form-map-name">Map name:</label>
+    <select id="form-map-name" name="map-name"></select>
+
+    <hr>
+    <label>Map Title:</label>
+    <input id="form-map-title" name="map-title" disabled></input>
+    <br>
+    <label>Map version:</label>
+    <input id="form-map-version" name="map-version" disabled></input>
+    <hr>
+    <label>Row, Column:</label>
+    <select id="form-grid-row" name="grid-row"></select>
+    <select id="form-grid-column" name="grid-column"></select>
+    <br>
+    <label>Type:</label>
+    <input id="form-terrain-type" name="terrain-type"></input>
+    <br>
+    <label>Contents:</label>
+    <input id="form-cell-contents" name="cell-contents"></input>
+  </form>
+  <hr>
+  <button id="save-button">Save</button>
 
   <div id="response">
     HTTP responses go here...

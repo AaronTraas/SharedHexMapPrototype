@@ -2,61 +2,37 @@
 <html>
 <head>
   <link rel="icon" href="/favicon.ico"/>
-  <title>Go service test harness</title>
-  <script type="text/javascript" src="/script.js"></script>
-  <style>
-    #response {
-      font-family: monospace;
-      margin-top: 2em;
-      padding: 1em;
-      max-width: 80em;
-      border: 1px solid black;
-      height: 26lh;
-      overflow: scroll;
-      background-color: #333;
-      color: #0A0;
-      white-space: pre;
-    }
-
-    #debug-form label {
-      display: inline-block;
-      width: 150px;
-      margin-bottom: 0.5lh;
-    }
-  </style>
+  <title>List of maps</title>
 </head>
 <body>
-  <h1>Hello, World!</h1>
+  <h1>Hex Maps</h1>
+
+  <ul id="map-list"></ul>
+
+  <hr>
 
   <a href="hexmap.html">HEXMAP Front End</a>
 
-  <h2>Form:</h2>
-  <form id="debug-form">
-    <label for="form-map-name">Map name:</label>
-    <select id="form-map-name" name="map-name"></select>
+  <script>
+    document.addEventListener('DOMContentLoaded', async (event) => {
+      const map_list = document.getElementById('map-list')
+      const response = await fetch('/maps');
+      const data = await response.json();
 
-    <hr>
-    <label>Map Title:</label>
-    <input id="form-map-title" name="map-title" disabled></input>
-    <br>
-    <label>Map version:</label>
-    <input id="form-map-version" name="map-version" disabled></input>
-    <hr>
-    <label>Row, Column:</label>
-    <select id="form-grid-row" name="grid-row"></select>
-    <select id="form-grid-column" name="grid-column"></select>
-    <br>
-    <label>Terrain Type:</label>
-    <input id="form-terrain-type" name="terrain-type"></input>
-    <br>
-    <label>Contents:</label>
-    <input id="form-cell-contents" name="cell-contents"></input>
-  </form>
-  <hr>
-  <button id="save-button">Save</button>
+      console.log(data)
 
-  <div id="response">
-    HTTP responses go here...
-  </div>
+      data["maps"].forEach(mapEntry => {
+        const li = document.createElement("li");
+
+        const a = document.createElement("a");
+        a.href = `/debug.html#?map=${mapEntry.filename}`;
+        a.textContent = `${mapEntry.title} (v${mapEntry.version})`;
+
+        li.appendChild(a);
+
+        map_list.appendChild(li);
+      })
+    });
+  </script>
 </body>
 </html>

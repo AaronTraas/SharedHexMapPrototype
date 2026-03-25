@@ -20,15 +20,21 @@ type ErrorResponse struct {
 }
 
 type MapListResponse struct {
-	Message  string   `json:"message"`
-	Status   int      `json:"status"`
-	Maps     []string `json:"maps"`
+	Message  string         `json:"message"`
+	Status   int            `json:"status"`
+	Maps     []MapListEntry `json:"maps"`
 }
 
 type MapResponse struct {
 	Message  string   `json:"message"`
 	Status   int      `json:"status"`
 	Map      HexMap   `json:"map"`
+}
+
+type MapListEntry struct {
+	Filename string `json:"filename"`
+	Title    string `json:"title"`
+	Version  uint64 `json:"version"`
 }
 
 func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTransformTask) {
@@ -41,15 +47,21 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 
-		keys := make([]string, 0, len(hexMaps))
-		for k := range hexMaps {
-			keys = append(keys, k)
+		mapList := make([]MapListEntry, 0, len(hexMaps))
+		for k, v := range hexMaps {
+			entry := MapListEntry{
+				Filename: k,
+				Title:    v.Title,
+				Version:  v.Version,
+			}
+
+			mapList = append(mapList, entry)
 		}
 
 		res := MapListResponse {
 			Message:  "Success",
 			Status:   200,
-			Maps:     keys,
+			Maps:     mapList,
 		}
 		json.NewEncoder(w).Encode(res)
 	})

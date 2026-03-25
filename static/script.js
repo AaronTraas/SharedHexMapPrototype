@@ -13,27 +13,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
   var mapCells = [[]]
 
-  const load_map_list = async function() {
-    try {
-      const response = await fetch('/maps');
-      const data = await response.json();
-
-      const json_string = JSON.stringify(data, null, 2)
-
-      response_output.innerHTML = json_string;
-
-      data["maps"].forEach(optionText => {
-        const newOption = new Option(optionText, optionText);
-        map_name.add(newOption);
-      });
-
-      map_name.dispatchEvent(new Event('change'))
-
-    } catch(e) {
-      console.error(e)
-    }
-  }
-
   const load_map = async function(mapName) {
     try {
       // clear rows and columns in dropdown
@@ -49,6 +28,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
       response_output.innerHTML = json_string;
 
+      map_name.value = mapName
       map_title.value = data["map"]["title"]
       map_version.value = data["map"]["version"]
 
@@ -70,11 +50,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     } catch(e) {
       console.error(e)
     }
-  }
-
-  const map_select_handler = async function(event) {
-    const mapName = event.target.value;
-    load_map(mapName)
   }
 
   const cell_select_handler = async function(event) {
@@ -118,7 +93,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
     }
   }
 
-  map_name.addEventListener('change', map_select_handler);
   grid_row.addEventListener('change', cell_select_handler);
   grid_column.addEventListener('change', cell_select_handler);
 
@@ -127,6 +101,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
     save_handler()
   });
 
-  //load_handler();
-  load_map_list();
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  if (params.has('map')) {
+    load_map(params.get('map'))
+  } else {
+    window.location.href = "/";
+  }
 })

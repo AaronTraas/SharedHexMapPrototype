@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
   const map_version = document.getElementById('form-map-version')
   const grid_row = document.getElementById('form-grid-row')
   const grid_column = document.getElementById('form-grid-column')
-  const grid_value = document.getElementById('form-grid-value')
+  const terrain_type = document.getElementById('form-terrain-type')
+  const cell_contents = document.getElementById('form-cell-contents')
   const response_output = document.getElementById('response')
 
   var mapCells = [[]]
@@ -18,7 +19,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
       const json_string = JSON.stringify(data, null, 2)
 
-      console.debug(`Response: ${json_string}`);
       response_output.innerHTML = json_string;
 
       data["maps"].forEach(optionText => {
@@ -48,8 +48,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
       const json_string = JSON.stringify(data, null, 2)
 
-      console.debug(`Response: ${json_string}`);
       response_output.innerHTML = json_string;
+
+      map_title.value = data["map"]["title"]
+      map_version.value = data["map"]["version"]
 
       mapCells = data["map"]["cells"]
 
@@ -65,10 +67,21 @@ document.addEventListener('DOMContentLoaded', (event) => {
         grid_column.add(newOption);
       }
 
-     // grid_value.value = data['grid-cell']['contents']
+      grid_column.dispatchEvent(new Event('change'))
     } catch(e) {
       console.error(e)
     }
+  }
+
+  const cell_select_handler = async function(event) {
+    const row = grid_row.value
+    const col = grid_column.value
+    const cell = mapCells[row][col]
+
+    console.log(`Cell (${row}, ${col}) selected - ${JSON.stringify(cell)}`)
+
+    terrain_type.value = cell["type"]
+    cell_contents.value = cell["contents"]
   }
 
   const save_handler = async function() {
@@ -86,7 +99,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
       });
 
       const data = await response.json();
-
       const json_string = JSON.stringify(data, null, 2)
 
       console.debug(`Response: ${json_string}`);
@@ -97,6 +109,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
   }
 
   map_name.addEventListener('change', map_select_handler);
+  grid_row.addEventListener('change', cell_select_handler);
+  grid_column.addEventListener('change', cell_select_handler);
 
   save_button.addEventListener('click', function() {
     console.debug('Save button was clicked!');

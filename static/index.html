@@ -3,6 +3,7 @@
 <head>
   <link rel="icon" href="/favicon.ico"/>
   <title>List of maps</title>
+  <script type="text/javascript" src="/map_api.js"></script>
 </head>
 <body>
   <h1>Hex Maps</h1>
@@ -16,12 +17,11 @@
   <script>
     document.addEventListener('DOMContentLoaded', async (event) => {
       const map_list = document.getElementById('map-list')
-      const response = await fetch('/maps');
-      const data = await response.json();
 
-      console.log(data)
+      const maps = await getMapList()
+      console.log(JSON.stringify(maps))
 
-      data["maps"].forEach(mapEntry => {
+      maps.forEach(mapEntry => {
         const li = document.createElement("li");
 
         const a = document.createElement("a");

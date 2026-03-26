@@ -41,7 +41,7 @@ async function saveHex(mapName, row, col, terrainType, contents) {
             "contents": contents
         }
 
-        const response = await fetch(`/maps/${mapName}/update/${row}/${col}`, {
+        const response = await fetch(`/maps/${mapName}/data/${row}/${col}`, {
             method: 'POST', // Specify the method
             headers: {
                 'Content-Type': 'application/json' // Inform the server we are sending JSON

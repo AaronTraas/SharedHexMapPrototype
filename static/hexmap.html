@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>The Map</title>
+  <title id="heading_title" ></title>
   <link rel="stylesheet" href="hexmap.css" />
   <script type="text/javascript" src="/map_api.js"></script>
 </head>
 <body>
 
-<h1>The Map</h1>
+<h1 id="title_heading" onclick="handleMapSettingsDialogShow()"></h1>
 
 <dialog id="hex_dialog" title="Basic dialog">
   <header>
@@ -16,9 +16,6 @@
   </header>
 
   <form>
-    <label for="hex_dialog_filename">Filename:</label>
-    <input id="hex_dialog_filename" disabled></input>
-
     <label for="hex_dialog_id">Hex ID:</label>
     <input id="hex_dialog_id"></input>
 
@@ -29,8 +26,34 @@
     <textarea id="hex_dialog_textarea" rows="20" cols="80" placeholder="Enter notes about this hex here."></textarea>
   </form>
   <footer>
-    <button onclick="hex_dialog.close()">Cancel</button>
+    <!-- <button onclick="hex_dialog.close()">Cancel</button> -->
     <button class="primary" onclick="hex_dialog.close()">Save</button>
+  </footer>
+</dialog>
+
+<dialog id="map_settings_dialog" title="Basic dialog">
+  <header>
+    <button onclick="map_settings_dialog.close()">X</button>
+    <h2>Edit Tile</h2>
+  </header>
+
+  <form>
+    <label for="map_settings_dialog_filename">Filename:</label>
+    <input id="map_settings_dialog_filename" disabled></input>
+
+    <label for="map_settings_dialog_rows">Rows:</label>
+    <input id="map_settings_dialog_rows" disabled></input>
+
+    <label for="map_settings_dialog_cols">Columns:</label>
+    <input id="map_settings_dialog_cols" disabled></input>
+
+    <label for="map_settings_dialog_version">Version:</label>
+    <input id="map_settings_dialog_version" disabled></input>
+
+  </form>
+  <footer>
+    <!-- <button onclick="map_settings_dialog.close()">Cancel</button> -->
+    <button class="primary" onclick="map_settings_dialog.close()">Save</button>
   </footer>
 </dialog>
 
@@ -74,7 +97,15 @@ const MAP_Y = 51;
 
 
 function displayCordinates(x, y){
-  return `${x}, ${(MAP_Y/2 | 0)-y}`;
+  //return `${x}, ${(MAP_Y/2 | 0)-y}`;
+  return `${x}, ${y}`;
+}
+
+function handleMapSettingsDialogShow() {
+  map_settings_dialog.showModal();
+}
+
+function handleMapSettingsDialogClose(){
 }
 
 function handleHexDialogClose() {
@@ -94,11 +125,11 @@ class HexData {
     this.y = y;
     this.notes = '';
     this.btn = document.createElement("BUTTON");
-    if( content ) {
+    /*if( content ) {
       this.btn.textContent = content;
-    } else {
-      this.btn.textContent = displayCordinates(x, y);
-    }
+    } else {*/
+    this.btn.textContent = displayCordinates(x, y);
+    /*}*/
     this.btn.id = `${x}_${y}`;
     this.btn.classList.add('hex');
     //this.setHexType(getRandomHexType());
@@ -113,6 +144,7 @@ class HexData {
     this.type = hex_type;
     this.btn.classList.add(hex_type);
     let attr = hex_attributes_by_type[hex_type];
+    this.btn.title=attr.text;
     this.btn.style.backgroundColor = attr.bg;
     this.btn.style.color = attr.fg;
   }
@@ -135,7 +167,7 @@ class HexData {
 
   async saveHex() {
     const response = await saveHex(
-                            hex_dialog_filename.value,
+                            map_settings_dialog_filename.value,
                             this.x, // row
                             this.y, // column
                             this.type,
@@ -190,31 +222,75 @@ function populateHexDialogSelect() {
   hex_dialog.addEventListener("close", handleHexDialogClose );
 }
 
+function setTitle(title) {
+  map_title_heading.textContent = title;
+  map_heading_title.textContent = title;
+}
+
+function updateMap() {
+  if(!document.hidden) {
+    getMapVersion(map_settings_dialog_filename.value).then( version => {
+      if (version != map_settings_dialog_version.value ) {
+        //do something better
+        location.reload();
+      }
+    });
+  }
+}
+
+
+var updateTimer = setInterval(updateMap, 3000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    updateMap();
+    clearInterval(updateTimer);
+    updateTimer = setInterval(updateMap, 3000);
+  } else {
+    clearInterval(updateTimer);
+  }
+});
+
+var map_version = -1;
 var hex_dialog_close_callback = null;
-var hex_dialog = document.getElementById('hex_dialog');
-const hex_dialog_filename  = document.getElementById('hex_dialog_filename');
-var hex_dialog_select = document.getElementById('hex_dialog_select');
-var hex_dialog_id = document.getElementById('hex_dialog_id');
-var hex_dialog_textarea = document.getElementById('hex_dialog_textarea');
+const hex_dialog = document.getElementById('hex_dialog');
+const hex_dialog_select = document.getElementById('hex_dialog_select');
+const hex_dialog_id = document.getElementById('hex_dialog_id');
+const hex_dialog_textarea = document.getElementById('hex_dialog_textarea');
+const map_settings_dialog  = document.getElementById('map_settings_dialog');
+const map_settings_dialog_filename  = document.getElementById('map_settings_dialog_filename');
+const map_settings_dialog_rows  = document.getElementById('map_settings_dialog_rows');
+const map_settings_dialog_cols  = document.getElementById('map_settings_dialog_cols');
+const map_settings_dialog_version  = document.getElementById('map_settings_dialog_version');
+
+map_settings_dialog_version
+const map_title_heading = document.getElementById('title_heading');
+const map_heading_title = document.getElementById('heading_title');
 populateHexDialogSelect();
+map_settings_dialog.addEventListener("close", handleMapSettingsDialogClose );
+
 
 const params = new URLSearchParams(window.location.hash.slice(1));
 if (params.has('map')) {
-  const mapFilename = params.get('map')
-  hex_dialog_filename.value = mapFilename;
+  const mapFilename = params.get('map');
+  map_settings_dialog_filename.value = mapFilename;
 
   loadMap(mapFilename).then(map => {
-    const mapCells = map["cells"]
-    const row_count = mapCells.length
-    const col_count = mapCells[0].length
+    setTitle(map["title"]);
+    const mapCells = map["cells"];
+    map_settings_dialog_version.value = map["version"];
+    const row_count = mapCells.length;
+    map_settings_dialog_rows.value = row_count;
+    const col_count = mapCells[0].length;
+    map_settings_dialog_cols.value = col_count;
 
     //console.log(JSON.stringify(mapCells, null, 2))
 
     var hex_map = new HexMap(row_count, col_count, mapCells);
   });
 
-
-} else {
+}
+else {
+  setTitle("The Map");
   var hex_map = new HexMap(MAP_X, MAP_Y);
 }
 

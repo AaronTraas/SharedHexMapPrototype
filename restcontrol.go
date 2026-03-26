@@ -52,6 +52,15 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
 
+		if r.Method != "GET" {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Bad request. Method not supported."),
+				Status: 400,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
 		mapList := make([]MapListEntry, 0, len(hexMaps))
 		for k, v := range hexMaps {
 			entry := MapListEntry{
@@ -75,6 +84,16 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != "GET" {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Bad request. Method not supported."),
+				Status: 400,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
 		mapName := r.PathValue("name")
 
 		hexMap := hexMaps[mapName]
@@ -101,6 +120,16 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != "GET" {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Bad request. Method not supported."),
+				Status: 400,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
+
 		mapName := r.PathValue("name")
 
 		hexMap := hexMaps[mapName]
@@ -128,8 +157,19 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		json.NewEncoder(w).Encode(res)
 	})
 
-	http.HandleFunc("/maps/{name}/update/{row}/{col}", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/maps/{name}/data/{row}/{col}", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
+
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != "POST" {
+			res := ErrorResponse {
+				Message: fmt.Sprintf("Bad request. Method not supported."),
+				Status: 400,
+			}
+			json.NewEncoder(w).Encode(res)
+			return
+		}
 
 		mapName := r.PathValue("name")
 		row, rowErr := strconv.Atoi(r.PathValue("row"))
@@ -155,8 +195,6 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		}
 
 		log.Printf("  - Updating grid cell (%d, %d)) {type: '%s', contents: '%s'}\n", row, col, newCell.Type, newCell.Contents)
-
-		w.Header().Set("Content-Type", "application/json")
 
 		res := ResponseCellUpdated{
 			Message:  "Accepted",

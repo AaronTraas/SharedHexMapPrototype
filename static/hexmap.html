@@ -147,7 +147,11 @@ class HexData {
     this.type = hex_type;
     this.btn.classList.add(hex_type);
     let attr = hex_attributes_by_type[hex_type];
-    this.btn.title=attr.text;
+    if (this.notes) {
+      this.btn.title=attr.text+"\n"+this.notes.split("\n")[0];
+    } else {
+      this.btn.title=attr.text;
+    }
     this.btn.style.backgroundColor = attr.bg;
     this.btn.style.color = attr.fg;
   }

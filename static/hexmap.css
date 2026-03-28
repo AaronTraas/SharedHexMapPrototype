@@ -5,9 +5,26 @@ button.hex {
   white-space: nowrap;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background-color: silver;
+}
+
 div.map {
+  position: relative;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: row;
+  transition: transform 100ms ease;
+  transform-origin: top left;
 }
 
 div.map div {
@@ -15,12 +32,27 @@ div.map div {
   flex-direction: column;
 }
 
-div.map_column:nth-child(even) button.hex:first-child {
+div.map_column_even button.hex:first-child {
   height: 25px;
 }
 
-div.map_column:nth-child(odd) button.hex:last-child {
+div.map_column_odd button.hex:last-child {
   height: 25px;
+}
+
+body>* {
+  flex: 0 0 auto;
+  margin-left: 5px;
+}
+
+div.scroll_box {
+  flex: 1 1 auto;
+  width: 99.7%;
+  position: relative;
+  overflow: hidden;
+  background-color: white;
+  margin: 0 auto 5px auto;
+  border: 1px solid black;
 }
 
 #hex_dialog>div {

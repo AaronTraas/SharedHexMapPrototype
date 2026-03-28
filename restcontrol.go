@@ -174,7 +174,7 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		json.NewEncoder(w).Encode(res)
 	})
 
-	http.HandleFunc("/maps/{name}/data/{row}/{col}", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/maps/{name}/data/{x}/{y}", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s\n", r.Method, r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -189,8 +189,8 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		}
 
 		mapName := r.PathValue("name")
-		row := r.PathValue("row")
-		col := r.PathValue("col")
+		x := r.PathValue("x")
+		y := r.PathValue("y")
 
 		var newCell ResponseCellUpdateRequest
 		err := json.NewDecoder(r.Body).Decode(&newCell)
@@ -203,7 +203,7 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 			return
 		}
 
-		log.Printf("  - Updating grid cell (%s, %s)) {contents: '%s'}\n", row, col, newCell.Contents)
+		log.Printf("  - Updating grid cell (%s, %s)) {contents: '%s'}\n", x, y, newCell.Contents)
 
 		res := ResponseCellUpdated{
 			Message:  "Accepted",
@@ -212,7 +212,7 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		}
 
 		newHexMap := hexMaps[mapName]
-		newHexMap.HexGrid[row+"/"+col] = newCell.Contents
+		newHexMap.HexGrid[x+"/"+y] = newCell.Contents
 		newHexMap.Version += 1
 		hexMaps[mapName] = newHexMap
 

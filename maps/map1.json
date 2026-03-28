@@ -3,8 +3,8 @@
     "version": 1,
     "default" : "{\"type\": \"unknown\", \"notes\": \"\"}",
     "min_x": 0,
-    "max_x": 10,
-    "min_y": 0,
+    "max_x": 31,
+    "min_y": -10,
     "max_y": 10,
     "cells": {
         "0/0" : "{\"type\": \"coastal\",   \"notes\": \"Map 1: 0, 0\"}",

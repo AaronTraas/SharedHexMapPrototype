@@ -34,13 +34,13 @@ async function loadMap(mapName) {
     }
 }
 
-async function saveHex(mapName, row, col, contents) {
+async function saveHex(mapName, x, y, contents) {
     try {
         const post_data = {
             "contents": contents
         }
 
-        const response = await fetch(`/maps/${mapName}/data/${row}/${col}`, {
+        const response = await fetch(`/maps/${mapName}/data/${x}/${y}`, {
             method: 'POST', // Specify the method
             headers: {
                 'Content-Type': 'application/json' // Inform the server we are sending JSON

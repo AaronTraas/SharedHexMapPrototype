@@ -92,12 +92,38 @@ const hex_attributes_by_type = {
 
 const hex_types = Object.keys(hex_attributes_by_type);
 
-const MAP_X = 40;
-const MAP_Y = 51;
+function drag_start(event) {
+    document.body.style.cursor = 'grabbing';
+    event.dataTransfer.setDragImage(new Image(),0,0);
 
+    const style = getComputedStyle(event.target);
+    const data = {
+      'id': event.target.id,
+      'x': parseInt(style.left) - event.clientX,
+      'y': parseInt(style.top) - event.clientY
+    }
+    event.dataTransfer.setData('application/json', JSON.stringify(data));
+}
+
+function drag_over(event) {
+    const data = JSON.parse(event.dataTransfer.getData('application/json'));
+    var dm = document.getElementById(data.id);
+    dm.parentNode.appendChild(dm);
+    dm.style.left = (event.clientX + data.x) + 'px';
+    dm.style.top = (event.clientY + data.y) + 'px';
+    event.preventDefault();
+}
+
+function drop(event) {
+    drag_over(event);
+    document.body.style.cursor = 'auto';
+}
+
+function hexId(x, y) {
+  return `${x}/${y}`;
+}
 
 function displayCordinates(x, y){
-  //return `${x}, ${(MAP_Y/2 | 0)-y}`;
   return `${x}, ${y}`;
 }
 
@@ -130,7 +156,7 @@ class HexData {
       this.notes = '';
     }
     this.btn.textContent = displayCordinates(x, y);
-    this.btn.id = `${x}_${y}`;
+    this.btn.id = hexId(x, y);
     this.btn.classList.add('hex');
     //this.setHexType(getRandomHexType());
     this.setHexType(hexType);
@@ -183,8 +209,8 @@ class HexData {
 
     const response = await saveHex(
                             map_settings_dialog_filename.value,
-                            this.x, // row
-                            this.y, // column
+                            this.x,
+                            this.y,
                             JSON.stringify(content)
                           );
 
@@ -192,34 +218,105 @@ class HexData {
   }
 }
 
+
+
 class HexMap {
-  constructor( columns, rows, mapCells = null, defaultHexData=null ) {
-    this.columns = columns;
-    this.rows = rows;
+  constructor( maxX=16, maxY=16, minX=0, minY=0, mapCells = null, defaultHexData=null ) {
     this.hexes = [];
+    this.zoom = 1;
+    this.scrollBox = document.createElement("DIV");
+    this.scrollBox.classList.add('scroll_box');
     let map = document.createElement("DIV");
+    this.mapElement = map;
     map.classList.add('map');
-    for (let i = 0; i < columns; ++i) {
+    map.id="thehexmap";
+    for (let x = minX; x <= maxX; ++x) {
       let d = document.createElement("DIV");
-      d.classList.add('map_column');
-      this.hexes[i] = [];
-      for (let j = 0; j < rows; ++j) {
-        let cellName = `${i}/${j}`
-        let cell = Object.hasOwn(mapCells, cellName) ? JSON.parse(mapCells[cellName]) : defaultHexData;
+      if( x % 2 ) {
+        d.classList.add('map_column_odd');
+      } else {
+        d.classList.add('map_column_even');
+      }
+      for (let y = maxY; y >= minY; --y) {
+        let cellId = hexId(x,y);
+        let cell = Object.hasOwn(mapCells, cellId) ? JSON.parse(mapCells[cellId]) : defaultHexData;
         let type = Object.hasOwn(cell, "type") ? cell["type"] : "unknown";
         let notes = Object.hasOwn(cell, "notes") ? cell["notes"] : null;
         //console.log(type, notes)
-        let b = new HexData(i, j, type, notes);
-        this.hexes[i][j] = b;
+        let b = new HexData(x, y, type, notes);
+        this.hexes[cellId] = b;
         d.appendChild(b.btn);
       }
       map.appendChild(d);
     }
-    document.body.appendChild(map);
+    this.scrollBox.appendChild(map);
+    document.body.appendChild(this.scrollBox);
+    this.scrollBox.addEventListener('dragover',drag_over);
+    this.scrollBox.addEventListener('drop',drop);
+    map.addEventListener("dragstart", drag_start);
+    map.draggable=true;
+    this.scrollBox.addEventListener("wheel", (evt) => {
+      if( evt.wheelDelta > 0 )
+      {
+        this.zoomIn();
+      } else {
+        this.zoomOut();
+      }
+    });
+    document.body.addEventListener("keydown", (evt) => {
+      switch(evt.key)
+      {
+        case 'ArrowUp':
+          var oldTop = parseInt(getComputedStyle(this.mapElement).top);
+          this.mapElement.style.top = (oldTop - 5) + "px";
+          break;
+
+        case 'ArrowDown':
+          var oldTop = parseInt(getComputedStyle(this.mapElement).top);
+          this.mapElement.style.top = (oldTop + 5) + "px";
+          break;
+
+        case 'ArrowLeft':
+          var oldLeft = parseInt(getComputedStyle(this.mapElement).left);
+          this.mapElement.style.left = (oldLeft - 5) + "px";
+          break;
+
+        case 'ArrowRight':
+          var oldLeft = parseInt(getComputedStyle(this.mapElement).left);
+          this.mapElement.style.left = (oldLeft + 5) + "px";
+          break;
+
+        case '+':
+        case '=':
+          this.zoomIn();
+          break;
+
+        case '-':
+        case '_':
+          this.zoomOut();
+          break;
+      }
+    });
+  }
+
+  zoomIn() {
+    if (this.zoom < 10) {
+      this.zoom *= 1.1;
+      if( (this.zoom - 1)**2 < 0.005 ) this.zoom = 1;
+      this.mapElement.style.transform = "scale(" + this.zoom + ")";
+    }
+  }
+
+  zoomOut() {
+    if (this.zoom > 0.1) {
+      this.zoom = this.zoom/1.1;
+      if( (this.zoom - 1)**2 < 0.005 ) this.zoom = 1;
+      this.mapElement.style.transform = "scale(" + this.zoom + ")";
+    }
   }
 
   getHexData( x, y ) {
-    return this.hexes[x][y];
+    return this.hexes[hexId(x,y)];
   }
 }
 
@@ -291,20 +388,17 @@ if (params.has('map')) {
 
   loadMap(mapFilename).then(map => {
     setTitle(map["title"]);
-    const mapCells = map["cells"];
     map_settings_dialog_version.value = map["version"];
-    const row_count = map["max_x"];
-    map_settings_dialog_rows.value = row_count;
-    const col_count = map["max_y"];
-    map_settings_dialog_cols.value = col_count;
+    map_settings_dialog_rows.value = map["max_y"] - map["min_y"];
+    map_settings_dialog_cols.value = map["max_x"] - map["min_x"];
 
-    //console.log(JSON.stringify(mapCells, null, 2))
-
-    var hex_map = new HexMap(row_count, col_count, mapCells, JSON.parse(map["default"]));
+    var hex_map = new HexMap(map["max_x"], map["max_y"], map["min_x"], map["min_y"],
+      map["cells"], JSON.parse(map["default"]));
   });
 
-}
-else {
+} else {
+  const MAP_X = 40;
+  const MAP_Y = 51;
   setTitle("The Map");
   var hex_map = new HexMap(MAP_X, MAP_Y);
 }

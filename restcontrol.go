@@ -216,6 +216,8 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		newHexMap.Version += 1
 		hexMaps[mapName] = newHexMap
 
+		saveMap(mapName, newHexMap)
+
 		json.NewEncoder(w).Encode(res)
 	})
 

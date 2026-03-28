@@ -18,6 +18,7 @@ type MapTransformTask struct {
 
 var transformTaskChannel chan MapTransformTask
 
+
 func mapTransformWorker() {
 	for task := range transformTaskChannel {
 		fmt.Printf("Worker processing task: %s\n", task.Timestamp)
@@ -25,6 +26,27 @@ func mapTransformWorker() {
 		// time.Sleep(time.Second)
 		log.Printf("Worker finished job: %s\n", task.Timestamp)
 	}
+}
+
+func saveMap(jsonFileName string, hexmap HexMap) (error) {
+	jsonFilePath := filepath.Join("./maps", jsonFileName)
+	log.Printf("- Saving '%s'\n", jsonFilePath)
+
+	byteValue, err := json.MarshalIndent( hexmap, "", "  " )
+	if err != nil {
+		log.Println("Error Marshaling JSON:", err)
+		return err
+	}
+
+	err = os.WriteFile(jsonFilePath, byteValue, 0644)
+	if err != nil {
+		log.Println("Error Writing JSON to file:", err)
+		return err
+	}
+
+	log.Println("Successfully saved.")
+
+	return nil
 }
 
 func loadMap(jsonFilePath string) (HexMap, error) {

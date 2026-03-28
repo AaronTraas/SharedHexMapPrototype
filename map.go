@@ -1,12 +1,14 @@
 package main
 
-type GridCell struct {
-	Type     string `json:"type"`
-	Contents string `json:"contents"`
-}
+type GridCell string
 
 type HexMap struct {
-	Title   string       `json:"title"`
-	Version uint64       `json:"version"`
-	HexGrid [][]GridCell `json:"cells"`
+	Title   string               `json:"title"`
+	Version uint64               `json:"version"`
+	Default GridCell             `json:"default"`
+	MinX int                     `json:"min_x"`
+	MaxX int                     `json:"max_x"`
+	MinY int                     `json:"min_y"`
+	MaxY int                     `json:"max_y"`
+	HexGrid map[string]GridCell  `json:"cells"`
 }

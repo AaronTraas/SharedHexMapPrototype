@@ -15,7 +15,7 @@ async function getMapVersion(mapName) {
         const response = await fetch(`/maps/${mapName}/metadata`);
         const data = await response.json();
 
-        return data["map"]["version"]
+        return data["data"]["version"]
     } catch(e) {
         console.error(e)
         return null
@@ -34,10 +34,9 @@ async function loadMap(mapName) {
     }
 }
 
-async function saveHex(mapName, row, col, terrainType, contents) {
+async function saveHex(mapName, row, col, contents) {
     try {
         const post_data = {
-            "type": terrainType,
             "contents": contents
         }
 

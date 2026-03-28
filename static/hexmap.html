@@ -11,7 +11,7 @@
 
 <dialog id="hex_dialog" title="Basic dialog">
   <header>
-    <button onclick="hex_dialog.close()">X</button>
+    <button onclick="hex_dialog.close('cancel')">X</button>
     <h2>Edit Tile</h2>
   </header>
 
@@ -26,14 +26,14 @@
     <textarea id="hex_dialog_textarea" rows="20" cols="80" placeholder="Enter notes about this hex here."></textarea>
   </form>
   <footer>
-    <!-- <button onclick="hex_dialog.close()">Cancel</button> -->
-    <button class="primary" onclick="hex_dialog.close()">Save</button>
+    <button onclick="hex_dialog.close('cancel')">Cancel</button>
+    <button class="primary" onclick="hex_dialog.close('save')">Save</button>
   </footer>
 </dialog>
 
 <dialog id="map_settings_dialog" title="Basic dialog">
   <header>
-    <button onclick="map_settings_dialog.close()">X</button>
+    <button onclick="map_settings_dialog.close('cancel')">X</button>
     <h2>Edit Tile</h2>
   </header>
 
@@ -52,8 +52,8 @@
 
   </form>
   <footer>
-    <!-- <button onclick="map_settings_dialog.close()">Cancel</button> -->
-    <button class="primary" onclick="map_settings_dialog.close()">Save</button>
+    <button onclick="map_settings_dialog.close('cancel')">Cancel</button>
+    <button class="primary" onclick="map_settings_dialog.close('save')">Save</button>
   </footer>
 </dialog>
 
@@ -72,9 +72,9 @@ class HexTypeAttributes {
 
 const hex_attributes_by_type = {
   'unknown'  : new HexTypeAttributes('Unknown'     , 'darkgray',      'black'),
-  'artic'    : new HexTypeAttributes('Artic'       , 'snow',          'black'),
+  'arctic'   : new HexTypeAttributes('Arctic'      , 'snow',          'black'),
   'badlands' : new HexTypeAttributes('Badlands'    , 'orange',        'white'),
-  'costal'   : new HexTypeAttributes('Costal'      , 'sandybrown',    'black'),
+  'coastal'  : new HexTypeAttributes('Coastal'     , 'sandybrown',    'black'),
   'desert'   : new HexTypeAttributes('Desert'      , 'yellow',        'black'),
   'farmland' : new HexTypeAttributes('Farmland'    , 'wheat',         'black'),
   'forest'   : new HexTypeAttributes('Forest'      , 'forestgreen',   'white'),
@@ -109,10 +109,10 @@ function handleMapSettingsDialogClose(){
 }
 
 function handleHexDialogClose() {
-  if (hex_dialog_close_callback) {
+  if( hex_dialog.returnValue === "save" && hex_dialog_close_callback) {
     hex_dialog_close_callback();
-    hex_dialog_close_callback = null;
   }
+  hex_dialog_close_callback = null;
 }
 
 function getRandomHexType() {
@@ -123,13 +123,13 @@ class HexData {
   constructor( x, y, hexType = 'unknown', content = null ) {
     this.x = x;
     this.y = y;
-    this.notes = '';
     this.btn = document.createElement("BUTTON");
-    /*if( content ) {
-      this.btn.textContent = content;
-    } else {*/
+    if( content ) {
+      this.notes = content;
+    } else {
+      this.notes = '';
+    }
     this.btn.textContent = displayCordinates(x, y);
-    /*}*/
     this.btn.id = `${x}_${y}`;
     this.btn.classList.add('hex');
     //this.setHexType(getRandomHexType());
@@ -138,6 +138,9 @@ class HexData {
   }
 
   setHexType(hex_type) {
+    if( !Object.hasOwn(hex_attributes_by_type, hex_type) ) {
+      hex_type = 'unknown'
+    }
     if (this.type) {
       this.btn.classList.remove(this.type);
     }
@@ -160,18 +163,25 @@ class HexData {
   }
 
   handleHexDialogClose() {
-    this.notes = hex_dialog_textarea.value;
-    this.setHexType(hex_dialog_select.value);
-    this.saveHex();
+    if ( this.notes != hex_dialog_textarea.value ||
+         this.type != hex_dialog_select.value ) {
+      this.notes = hex_dialog_textarea.value;
+      this.setHexType(hex_dialog_select.value);
+      this.saveHex();
+    }
   }
 
   async saveHex() {
+    const content = {
+      "type": this.type,
+      "notes": this.notes
+    }
+
     const response = await saveHex(
                             map_settings_dialog_filename.value,
                             this.x, // row
                             this.y, // column
-                            this.type,
-                            this.notes
+                            JSON.stringify(content)
                           );
 
     console.debug(`Save response: ${JSON.stringify(response, null, 2)}`);
@@ -179,7 +189,7 @@ class HexData {
 }
 
 class HexMap {
-  constructor( columns, rows, mapCells = null ) {
+  constructor( columns, rows, mapCells = null, defaultHexData=null ) {
     this.columns = columns;
     this.rows = rows;
     this.hexes = [];
@@ -190,11 +200,12 @@ class HexMap {
       d.classList.add('map_column');
       this.hexes[i] = [];
       for (let j = 0; j < rows; ++j) {
-        let cell = mapCells ? mapCells[i][j] : null;
-        let type = cell ? cell["type"] : "unknown";
-        let contents = cell ? cell["contents"] : null;
-        console.log(type, contents)
-        let b = new HexData(i, j, type, contents);
+        let cellName = `${i}/${j}`
+        let cell = Object.hasOwn(mapCells, cellName) ? JSON.parse(mapCells[cellName]) : defaultHexData;
+        let type = Object.hasOwn(cell, "type") ? cell["type"] : "unknown";
+        let notes = Object.hasOwn(cell, "notes") ? cell["notes"] : null;
+        //console.log(type, notes)
+        let b = new HexData(i, j, type, notes);
         this.hexes[i][j] = b;
         d.appendChild(b.btn);
       }
@@ -278,14 +289,14 @@ if (params.has('map')) {
     setTitle(map["title"]);
     const mapCells = map["cells"];
     map_settings_dialog_version.value = map["version"];
-    const row_count = mapCells.length;
+    const row_count = map["max_x"];
     map_settings_dialog_rows.value = row_count;
-    const col_count = mapCells[0].length;
+    const col_count = map["max_y"];
     map_settings_dialog_cols.value = col_count;
 
     //console.log(JSON.stringify(mapCells, null, 2))
 
-    var hex_map = new HexMap(row_count, col_count, mapCells);
+    var hex_map = new HexMap(row_count, col_count, mapCells, JSON.parse(map["default"]));
   });
 
 }

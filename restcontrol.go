@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-    "strconv"
 )
+
+type ResponseCellUpdateRequest struct {
+	Contents GridCell `json:"contents"`
+}
 
 type ResponseCellUpdated struct {
 	Message  string   `json:"message"`
@@ -28,7 +31,7 @@ type MapListResponse struct {
 type MapMetadataResponse struct {
 	Message  string         `json:"message"`
 	Status   int            `json:"status"`
-	Map      MapListEntry   `json:"map"`
+	Data     HexMapMetadata `json:"data"`
 }
 
 type MapResponse struct {
@@ -41,6 +44,16 @@ type MapListEntry struct {
 	Filename string `json:"filename"`
 	Title    string `json:"title"`
 	Version  uint64 `json:"version"`
+}
+
+type HexMapMetadata struct {
+	Filename string              `json:"filename"`
+	Title   string               `json:"title"`
+	Version uint64               `json:"version"`
+	MinX int                     `json:"min_x"`
+	MaxX int                     `json:"max_x"`
+	MinY int                     `json:"min_y"`
+	MaxY int                     `json:"max_y"`
 }
 
 func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTransformTask) {
@@ -144,15 +157,19 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 			return
 		}
 
-		mapMeta := MapListEntry{
+		mapMeta := HexMapMetadata{
 				Filename: mapName,
 				Title:    hexMap.Title,
 				Version:  hexMap.Version,
+				MinX:     hexMap.MinX,
+				MaxX:     hexMap.MaxX,
+				MinY:     hexMap.MinY,
+				MaxY:     hexMap.MaxY,
 		}
 		res := MapMetadataResponse {
 			Message:  "Success",
 			Status:   200,
-			Map:      mapMeta,
+			Data:     mapMeta,
 		}
 		json.NewEncoder(w).Encode(res)
 	})
@@ -172,18 +189,10 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 		}
 
 		mapName := r.PathValue("name")
-		row, rowErr := strconv.Atoi(r.PathValue("row"))
-		col, colErr := strconv.Atoi(r.PathValue("col"))
-		if rowErr != nil || colErr != nil {
-			res := ErrorResponse {
-				Message: fmt.Sprintf("Map cell (%s, %s) does not exist.", r.PathValue("row"), r.PathValue("col")),
-				Status: 404,
-			}
-			json.NewEncoder(w).Encode(res)
-			return
-		}
+		row := r.PathValue("row")
+		col := r.PathValue("col")
 
-		var newCell GridCell
+		var newCell ResponseCellUpdateRequest
 		err := json.NewDecoder(r.Body).Decode(&newCell)
 		if err != nil {
 			res := ErrorResponse {
@@ -194,23 +203,18 @@ func StartRestController(hexMaps map[string]HexMap, transformTasks chan MapTrans
 			return
 		}
 
-		log.Printf("  - Updating grid cell (%d, %d)) {type: '%s', contents: '%s'}\n", row, col, newCell.Type, newCell.Contents)
+		log.Printf("  - Updating grid cell (%s, %s)) {contents: '%s'}\n", row, col, newCell.Contents)
 
 		res := ResponseCellUpdated{
 			Message:  "Accepted",
 			Status:   202,
-			GridCell: newCell,
+			GridCell: newCell.Contents,
 		}
 
-		newHexGrid := hexMaps[mapName].HexGrid
-		newHexGrid[row][col] = newCell
-		newMap := HexMap{
-			Title: hexMaps[mapName].Title,
-			Version: hexMaps[mapName].Version + 1,
-			HexGrid: newHexGrid,
-		}
-
-		hexMaps[mapName] = newMap
+		newHexMap := hexMaps[mapName]
+		newHexMap.HexGrid[row+"/"+col] = newCell.Contents
+		newHexMap.Version += 1
+		hexMaps[mapName] = newHexMap
 
 		json.NewEncoder(w).Encode(res)
 	})

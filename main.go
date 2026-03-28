@@ -32,7 +32,7 @@ func loadMap(jsonFilePath string) (HexMap, error) {
 	var hexmap HexMap
 
 	jsonFile, err := os.Open(jsonFilePath)
-	// if we os.Open returns an error then handle it
+	// if os.Open returns an error then handle it
 	if err != nil {
 		return hexmap, err
 	}

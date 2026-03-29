@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -29,7 +30,7 @@ func mapTransformWorker() {
 }
 
 func saveMap(jsonFileName string, hexmap HexMap) (error) {
-	jsonFilePath := filepath.Join("./maps", jsonFileName)
+	jsonFilePath := filepath.Join(".","maps", jsonFileName)
 	log.Printf("- Saving '%s'\n", jsonFilePath)
 
 	byteValue, err := json.MarshalIndent( hexmap, "", "  " )
@@ -37,6 +38,15 @@ func saveMap(jsonFileName string, hexmap HexMap) (error) {
 		log.Println("Error Marshaling JSON:", err)
 		return err
 	}
+
+	backupFilePath := jsonFilePath + "." + strconv.FormatUint(hexmap.Version - 1, 10) + ".bak"
+
+	err = os.Rename(jsonFilePath, backupFilePath)
+	if err != nil {
+		log.Println("Error making backup JSON:", err)
+		return err
+	}
+
 
 	err = os.WriteFile(jsonFilePath, byteValue, 0644)
 	if err != nil {
@@ -81,23 +91,18 @@ func main() {
 	// Create in memory data store for all maps
 	hexMaps := make(map[string]HexMap)
 
-	dirPath := "./maps" // Current directory, replace with your path
-
-	files, err := os.ReadDir(dirPath)
+	files, err := filepath.Glob(filepath.Join(".", "maps","*.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, file := range files {
-		if !file.IsDir() {
-			fullPath := filepath.Join(dirPath, file.Name())
-			hexMap, err := loadMap(fullPath)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			hexMaps[file.Name()] = hexMap
+	for _, fullPath := range files {
+		hexMap, err := loadMap(fullPath)
+		if err != nil {
+			log.Fatal(err)
 		}
+
+		hexMaps[filepath.Base(fullPath)] = hexMap
 	}
 
 	// Create go channel for map transform operations to be created by the web service

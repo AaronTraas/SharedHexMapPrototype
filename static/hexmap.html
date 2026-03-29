@@ -221,9 +221,8 @@ class HexData {
 
 
 class HexMap {
-  constructor( maxX=16, maxY=16, minX=0, minY=0, mapCells = null, defaultHexData=null ) {
+  constructor(view_params, maxX=16, maxY=16, minX=0, minY=0, mapCells = null, defaultHexData=null ) {
     this.hexes = [];
-    this.zoom = 1;
     this.scrollBox = document.createElement("DIV");
     this.scrollBox.classList.add('scroll_box');
     let map = document.createElement("DIV");
@@ -251,6 +250,10 @@ class HexMap {
     }
     this.scrollBox.appendChild(map);
     document.body.appendChild(this.scrollBox);
+    this.setZoom(view_params.zoom);
+    this.mapElement.style.left = (-view_params.x) + "px";
+    this.mapElement.style.top = (-view_params.y) + "px";
+
     this.scrollBox.addEventListener('dragover',drag_over);
     this.scrollBox.addEventListener('drop',drop);
     map.addEventListener("dragstart", drag_start);
@@ -299,20 +302,33 @@ class HexMap {
     });
   }
 
-  zoomIn() {
-    if (this.zoom < 10) {
-      this.zoom *= 1.1;
-      if( (this.zoom - 1)**2 < 0.005 ) this.zoom = 1;
-      this.mapElement.style.transform = "scale(" + this.zoom + ")";
+  updateMapData(maxX, maxY, minX, minY, mapCells, defaultHexData) {
+    for (let cellId in this.hexes) {
+        let b = this.hexes[cellId];
+
+        let cell = Object.hasOwn(mapCells, cellId) ? JSON.parse(mapCells[cellId]) : defaultHexData;
+        let type = Object.hasOwn(cell, "type") ? cell["type"] : "unknown";
+        let notes = Object.hasOwn(cell, "notes") ? cell["notes"] : null;
+        //console.log(type, notes)
+        b.notes = notes;
+        b.setHexType(type);
     }
   }
 
+  setZoom(z) {
+    if(z>10) z=10;
+    if(z<0.1) z=0.1;
+    if( (z - 1)**2 < 0.005 ) z = 1;
+    this.mapElement.style.transform = "scale(" + z + ")";
+    this.zoom = z;
+  }
+
+  zoomIn() {
+    this.setZoom(this.zoom*1.1);
+  }
+
   zoomOut() {
-    if (this.zoom > 0.1) {
-      this.zoom = this.zoom/1.1;
-      if( (this.zoom - 1)**2 < 0.005 ) this.zoom = 1;
-      this.mapElement.style.transform = "scale(" + this.zoom + ")";
-    }
+    this.setZoom(this.zoom/1.1);
   }
 
   getHexData( x, y ) {
@@ -339,12 +355,47 @@ function setTitle(title) {
   map_heading_title.textContent = title;
 }
 
+
+// function reloadMap() {
+//   //do something better
+//   const style = getComputedStyle(hex_map.mapElement);
+//   let url = new URL(window.location.href);
+//   let newUrlString = url.toString();
+//   console.log(newUrlString);
+//
+//   let params = url.searchParams;
+//   params.set('viewx', -parseInt(style.left));
+//   params.set('viewy', -parseInt(style.top));
+//
+//   params.set('zoom', hex_map.zoom);
+//
+//   newUrlString = url.toString();
+//   console.log(newUrlString);
+//
+//   clearInterval(updateTimer);
+//
+//   //window.location.assign(newUrlString);
+//   //location.reload();
+// }
+
+
+function reloadMap() {
+  loadMap(map_settings_dialog_filename.value).then(map => {
+    setTitle(map["title"]);
+    map_settings_dialog_version.value = map["version"];
+    map_settings_dialog_rows.value = map["max_y"] - map["min_y"];
+    map_settings_dialog_cols.value = map["max_x"] - map["min_x"];
+
+    hex_map.updateMapData(map["max_x"], map["max_y"], map["min_x"], map["min_y"],
+      map["cells"], JSON.parse(map["default"]));
+  });
+}
+
 function updateMap() {
-  if(!document.hidden) {
+  if(!document.hidden && !suspend_updates) {
     getMapVersion(map_settings_dialog_filename.value).then( version => {
       if (version != map_settings_dialog_version.value ) {
-        //do something better
-        location.reload();
+        reloadMap();
       }
     });
   }
@@ -364,6 +415,7 @@ document.addEventListener("visibilitychange", () => {
 
 var map_version = -1;
 var hex_dialog_close_callback = null;
+var suspend_updates=false;
 const hex_dialog = document.getElementById('hex_dialog');
 const hex_dialog_select = document.getElementById('hex_dialog_select');
 const hex_dialog_id = document.getElementById('hex_dialog_id');
@@ -382,6 +434,28 @@ map_settings_dialog.addEventListener("close", handleMapSettingsDialogClose );
 
 
 const params = new URLSearchParams(window.location.hash.slice(1));
+var view_params={
+  zoom: 1,
+  x: 0,
+  y: 0
+};
+
+if (params.has('zoom')) {
+  view_params.zoom = Number(params.get('zoom'));
+}
+
+if (params.has('viewx')) {
+  view_params.x = Number(params.get('viewx'));
+}
+
+if (params.has('viewy')) {
+  view_params.y = Number(params.get('viewy'));
+}
+
+console.log(JSON.stringify(view_params));
+
+var hex_map = {}
+
 if (params.has('map')) {
   const mapFilename = params.get('map');
   map_settings_dialog_filename.value = mapFilename;
@@ -392,7 +466,7 @@ if (params.has('map')) {
     map_settings_dialog_rows.value = map["max_y"] - map["min_y"];
     map_settings_dialog_cols.value = map["max_x"] - map["min_x"];
 
-    var hex_map = new HexMap(map["max_x"], map["max_y"], map["min_x"], map["min_y"],
+    hex_map = new HexMap(view_params, map["max_x"], map["max_y"], map["min_x"], map["min_y"],
       map["cells"], JSON.parse(map["default"]));
   });
 
@@ -400,7 +474,7 @@ if (params.has('map')) {
   const MAP_X = 40;
   const MAP_Y = 51;
   setTitle("The Map");
-  var hex_map = new HexMap(MAP_X, MAP_Y);
+  hex_map = new HexMap(view_params,MAP_X, MAP_Y);
 }
 
 

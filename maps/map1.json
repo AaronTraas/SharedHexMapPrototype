@@ -69,7 +69,7 @@
     "5/9": "{\"type\": \"forest\",    \"notes\": \"Map 1: 5, 9\"}",
     "6/0": "{\"type\": \"mountains\", \"notes\": \"Lonely Mountain\"}",
     "6/1": "{\"type\":\"arctic\",\"notes\":\"❄️Icy Peaks❄️\"}",
-    "6/2": "{\"type\": \"mountains\", \"notes\": \"Lonely Mountain\"}",
+    "6/2": "{\"type\":\"mountains\",\"notes\":\"Lonely Mountain\"}",
     "7/1": "{\"type\": \"mountains\", \"notes\": \"Lonely Mountain\"}",
     "7/2": "{\"type\": \"mountains\", \"notes\": \"Lonely Mountain\"}"
   }

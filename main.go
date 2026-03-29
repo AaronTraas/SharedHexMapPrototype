@@ -88,6 +88,10 @@ func loadMap(jsonFilePath string) (HexMap, error) {
 }
 
 func main() {
+	// TODO: Add/check/remove a lockfile with ./maps/hexmap.lock.${pid} to
+	// make sure only one instance of this program is running at a time.
+	// defer (); signal.NotifyContext ; os.Getpid
+
 	// Create in memory data store for all maps
 	hexMaps := make(map[string]HexMap)
 

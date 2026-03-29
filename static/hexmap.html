@@ -70,6 +70,8 @@ class HexTypeAttributes {
   }
 }
 
+<!--  ❄️ ⛰️⛰︎ ᨒ  𖠰🏜️💀 💀☢️⚠️☣️  𓇼 𓆉 𓆝 𓆡 𓇼🏝️⛱️🌞    🏜️☀️⏳🔥 🏛️  🐟⛲ 💧 〰️♒ ✖  ->
+
 const hex_attributes_by_type = {
   'unknown'  : new HexTypeAttributes('Unknown'     , 'darkgray',      'black'),
   'arctic'   : new HexTypeAttributes('Arctic'      , 'snow',          'black'),
@@ -135,10 +137,10 @@ function handleMapSettingsDialogClose(){
 }
 
 function handleHexDialogClose() {
-  if( hex_dialog.returnValue === "save" && hex_dialog_close_callback) {
-    hex_dialog_close_callback();
+  if( hex_dialog.returnValue === "save" && hex_dialog_close_callback_id) {
+    hex_map.hexes[hex_dialog_close_callback_id].handleHexDialogClose();
   }
-  hex_dialog_close_callback = null;
+  hex_dialog_close_callback_id = null;
 }
 
 function getRandomHexType() {
@@ -187,7 +189,7 @@ class HexData {
     hex_dialog_textarea.value = this.notes;
     hex_dialog_select.value = this.type;
 
-    hex_dialog_close_callback = () => this.handleHexDialogClose();
+    hex_dialog_close_callback_id = this.btn.id;
 
     hex_dialog.showModal();
   }
@@ -310,6 +312,14 @@ class HexMap {
         let type = Object.hasOwn(cell, "type") ? cell["type"] : "unknown";
         let notes = Object.hasOwn(cell, "notes") ? cell["notes"] : null;
         //console.log(type, notes)
+
+        if(hex_dialog_close_callback_id == cellId &&
+           (type != b.type || notes != b.notes) ) {
+          alert("Another user has updated this hex.\n" +
+                "Cancel your edits to keep their updates.\n" +
+                "The updates: ("+mapCells[cellId]+")");
+        }
+
         b.notes = notes;
         b.setHexType(type);
     }
@@ -414,7 +424,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 var map_version = -1;
-var hex_dialog_close_callback = null;
+var hex_dialog_close_callback_id = null;
 var suspend_updates=false;
 const hex_dialog = document.getElementById('hex_dialog');
 const hex_dialog_select = document.getElementById('hex_dialog_select');
